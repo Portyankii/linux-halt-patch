@@ -1,0 +1,34 @@
+halt.patch                                                                                                                                             Modified  
+diff -Naur linux-6.13.1/arch/x86/entry/syscalls/syscall_64.tbl linux-new/arch/x86/entry/syscalls/syscall_64.tbl
+--- linux-6.13.1/arch/x86/entry/syscalls/syscall_64.tbl 2025-02-01 11:21:26.000000000 -0500
++++ linux-new/arch/x86/entry/syscalls/syscall_64.tbl    2025-02-02 09:38:51.379757006 -0500
+@@ -435,3 +435,4 @@
+ 547    x32     pwritev2                compat_sys_pwritev64v2
+ # This is the end of the legacy x32 range.  Numbers 548 and above are
+ # not special and are not to be used for x32-specific syscalls.
++666    common  halt_system             sys_halt_system
+diff -Naur linux-6.13.1/include/linux/syscalls.h linux-new/include/linux/syscalls.h
+--- linux-6.13.1/include/linux/syscalls.h       2025-02-01 11:21:26.000000000 -0500
++++ linux-new/include/linux/syscalls.h  2025-02-02 09:17:46.758925932 -0500
+@@ -1008,6 +1008,7 @@
+                                 __u32 __user *ustatus);
+ asmlinkage long sys_spu_create(const char __user *name,
+                unsigned int flags, umode_t mode, int fd);
++asmlinkage long sys_halt_system(void);
+
+
+ /*
+diff -Naur linux-6.13.1/kernel/sys.c linux-new/kernel/sys.c
+--- linux-6.13.1/kernel/sys.c   2025-02-01 11:21:26.000000000 -0500
++++ linux-new/kernel/sys.c      2025-02-02 09:13:53.359404285 -0500
+@@ -2829,6 +2829,13 @@
+        return err ? -EFAULT : 0;
+ }
+
++SYSCALL_DEFINE0(halt_system)
++{
++  local_irq_disable();
++  asm volatile ("hlt");
++  return 0;
++}
++
